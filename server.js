@@ -1,30 +1,33 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
-const authRoutes = require("./routes/auth");
-const taskRoutes = require("./routes/tasks"); // ✅ Import task routes
+const { router: authRoutes, authenticate } = require("./routes/auth");
+const taskRoutes = require("./routes/tasks");
+const chatRoutes = require("./routes/chat");
 
 const app = express();
 
-// Middlewares
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve images
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRoutes); // ✅ Register tasks route
+app.use("/api/tasks", taskRoutes);
 
-// MongoDB Connection
+app.use("/api/chat", chatRoutes);
+
+// MongoDB
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => {
-    app.listen(5000, () => console.log("Server started on port 5000"));
-  })
+  .then(() =>
+    app.listen(5000, () => console.log("Server started on port 5000"))
+  )
   .catch((err) => console.log(err));
-
-  
