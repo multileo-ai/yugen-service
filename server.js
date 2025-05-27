@@ -11,6 +11,12 @@ const chatRoutes = require("./routes/chat");
 const app = express();
 
 // Middleware
+app.use(
+  cors({
+    origin: ["https://yugen-service.onrender.com"],
+    credentials: true,
+  })
+);
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve images
