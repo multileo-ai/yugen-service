@@ -153,6 +153,19 @@ router.get("/me", authenticate, async (req, res) => {
   }
 });
 
+// Get user by username
+router.get("/user/:username", async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select(
+      "-password"
+    );
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = {
   router,
   authenticate, // export the middleware
