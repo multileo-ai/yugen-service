@@ -9,12 +9,18 @@ const taskRoutes = require("./routes/tasks");
 const chatRoutes = require("./routes/chat");
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Middleware
+const allowedOrigins = [
+  "https://yugen-rose.vercel.app",
+  "http://localhost:3000",
+];
+
 app.use(
   cors({
-    origin: ["https://yugen-service.onrender.com"],
-    credentials: true,
+    origin: allowedOrigins,
+    credentials: true, // if you want cookies or auth headers
   })
 );
 app.use(cors());
@@ -33,7 +39,12 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() =>
-    app.listen(5000, () => console.log("Server started on port 5000"))
-  )
-  .catch((err) => console.log(err));
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server started on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1); // optional: stop the app if DB connection fails
+  });
