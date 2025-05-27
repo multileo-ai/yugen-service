@@ -17,12 +17,6 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true, // if you want cookies or auth headers
-  })
-);
 app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve images
