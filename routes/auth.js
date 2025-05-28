@@ -193,6 +193,29 @@ router.get("/image/:userId/:type", async (req, res) => {
   }
 });
 
+// POST /api/user/aichat
+router.post("/aichat", async (req, res) => {
+  const { userId, chatSession } = req.body;
+  try {
+    const user = await User.findById(userId);
+    user.aichat.push(chatSession);
+    await user.save();
+    res.status(200).json({ message: "Chat session saved." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/user/aichat/:userId
+router.get("/aichat/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    res.status(200).json(user.aichat || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = {
   router,
   authenticate,

@@ -19,6 +19,13 @@ const UserSchema = new mongoose.Schema({
     data: Buffer,
     contentType: String,
   },
+  aichat: [
+    {
+      title: String,
+      usermsg: String,
+      chat: [String],
+    },
+  ],
 });
 
 module.exports = mongoose.model("User", UserSchema);
