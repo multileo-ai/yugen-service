@@ -12,14 +12,12 @@ const UserSchema = new mongoose.Schema({
   following: { type: Number, default: 0 },
   skills: { type: [String], default: [] },
   profileImage: {
-    type: String,
-    default:
-      "https://img.freepik.com/premium-vector/social-media-logo_1305298-29989.jpg?semt=ais_hybrid&w=740",
+    data: Buffer,
+    contentType: String,
   },
   bannerImage: {
-    type: String,
-    default:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbpy2tMwk5uP2_cyuU4TTb-780DKGCx4Wp4g&s",
+    data: Buffer,
+    contentType: String,
   },
 });
 

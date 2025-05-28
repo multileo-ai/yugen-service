@@ -3,20 +3,14 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
-const path = require("path");
 const User = require("../models/User");
 
-// Multer setup
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure this folder exists
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
+// Use multer memory storage
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 500 * 1024 }, // 500KB max
 });
-const upload = multer({ storage });
 
 // Auth middleware
 const authenticate = (req, res, next) => {
@@ -91,7 +85,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Update profile with optional image upload
+// Update profile (store images as Buffers)
 router.put(
   "/update",
   authenticate,
@@ -104,6 +98,7 @@ router.put(
       const { name, username, phone, dob, bio, skills } = req.body;
       const userId = req.user.id;
 
+      // Check for username conflict
       if (username) {
         const existingUser = await User.findOne({
           username,
@@ -122,10 +117,20 @@ router.put(
         skills: skills ? JSON.parse(skills) : [],
       };
 
-      if (req.files.profileImage)
-        updates.profileImage = `/uploads/${req.files.profileImage[0].filename}`;
-      if (req.files.bannerImage)
-        updates.bannerImage = `/uploads/${req.files.bannerImage[0].filename}`;
+      // Handle image uploads
+      if (req.files?.profileImage) {
+        updates.profileImage = {
+          data: req.files.profileImage[0].buffer,
+          contentType: req.files.profileImage[0].mimetype,
+        };
+      }
+
+      if (req.files?.bannerImage) {
+        updates.bannerImage = {
+          data: req.files.bannerImage[0].buffer,
+          contentType: req.files.bannerImage[0].mimetype,
+        };
+      }
 
       const updatedUser = await User.findByIdAndUpdate(userId, updates, {
         new: true,
@@ -136,6 +141,11 @@ router.put(
 
       res.json(updatedUser);
     } catch (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res
+          .status(400)
+          .json({ message: "Images must be smaller than 500KB" });
+      }
       console.error(err);
       res.status(500).json({ message: "Server error" });
     }
@@ -166,7 +176,24 @@ router.get("/user/:username", async (req, res) => {
   }
 });
 
+router.get("/image/:userId/:type", async (req, res) => {
+  const { userId, type } = req.params;
+  const user = await User.findById(userId);
+
+  if (!user || !["profileImage", "bannerImage"].includes(type)) {
+    return res.status(404).send("Not found");
+  }
+
+  const image = user[type];
+  if (image && image.data) {
+    res.contentType(image.contentType);
+    res.send(image.data);
+  } else {
+    res.status(404).send("Image not found");
+  }
+});
+
 module.exports = {
   router,
-  authenticate, // export the middleware
+  authenticate,
 };
