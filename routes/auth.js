@@ -68,7 +68,7 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user._id }, "your_jwt_secret", {
       expiresIn: "7d",
     });
 
@@ -190,29 +190,6 @@ router.get("/image/:userId/:type", async (req, res) => {
     res.send(image.data);
   } else {
     res.status(404).send("Image not found");
-  }
-});
-
-// POST /api/user/aichat
-router.post("/aichat", async (req, res) => {
-  const { userId, chatSession } = req.body;
-  try {
-    const user = await User.findById(userId);
-    user.aichat.push(chatSession);
-    await user.save();
-    res.status(200).json({ message: "Chat session saved." });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/user/aichat/:userId
-router.get("/aichat/:userId", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    res.status(200).json(user.aichat || []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
