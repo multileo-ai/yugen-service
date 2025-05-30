@@ -3,7 +3,9 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
+
 const User = require("../models/User");
+const ChatMessage = require("../models/Chat"); // Add your Chat model
 
 // Use multer memory storage
 const storage = multer.memoryStorage();
@@ -30,6 +32,8 @@ const authenticate = (req, res, next) => {
     res.status(401).json({ error: "Token is not valid" });
   }
 };
+
+// ===== Auth Routes =====
 
 // Signup
 router.post("/signup", async (req, res) => {
@@ -85,7 +89,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Update profile (store images as Buffers)
+// ===== Profile Update with Multer =====
 router.put(
   "/update",
   authenticate,
@@ -98,7 +102,6 @@ router.put(
       const { name, username, phone, dob, bio, skills } = req.body;
       const userId = req.user.id;
 
-      // Check for username conflict
       if (username) {
         const existingUser = await User.findOne({
           username,
@@ -117,7 +120,6 @@ router.put(
         skills: skills ? JSON.parse(skills) : [],
       };
 
-      // Handle image uploads
       if (req.files?.profileImage) {
         updates.profileImage = {
           data: req.files.profileImage[0].buffer,
@@ -152,7 +154,7 @@ router.put(
   }
 );
 
-// Get current user
+// ===== User Info =====
 router.get("/me", authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -163,7 +165,6 @@ router.get("/me", authenticate, async (req, res) => {
   }
 });
 
-// Get user by username
 router.get("/user/:username", async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username }).select(
@@ -193,7 +194,7 @@ router.get("/image/:userId/:type", async (req, res) => {
   }
 });
 
-// Save new AI chat to user's history
+// ===== AI Chat History =====
 router.post("/aichat", async (req, res) => {
   const { userId, chatSession } = req.body;
 
@@ -223,7 +224,6 @@ router.post("/aichat", async (req, res) => {
   }
 });
 
-// Get AI chat history for a user
 router.get("/aichat/:userId", async (req, res) => {
   try {
     const user = await User.findById(req.params.userId).select("aichat");
@@ -232,6 +232,42 @@ router.get("/aichat/:userId", async (req, res) => {
   } catch (err) {
     console.error("Error fetching chat history:", err);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ===== Community Chat =====
+router.post("/chat", authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select("name username");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const { message } = req.body;
+
+    const newMsg = new ChatMessage({
+      userId: user._id,
+      name: user.name,
+      username: user.username,
+      message,
+      createdAt: new Date(),
+    });
+
+    await newMsg.save();
+
+    res.status(201).json(newMsg);
+  } catch (err) {
+    console.error("Failed to save chat message:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/chat", async (req, res) => {
+  try {
+    const messages = await ChatMessage.find().sort({ createdAt: 1 });
+    res.json(messages);
+  } catch (err) {
+    console.error("Failed to fetch chat messages:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
