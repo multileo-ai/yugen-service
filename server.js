@@ -32,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.use("/api/chat", chatRoutes);
-pp.use("/api/user", userRoutes);
+app.use("/api/user", userRoutes);
 
 // MongoDB
 mongoose
