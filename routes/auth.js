@@ -198,40 +198,32 @@ router.get("/image/:userId/:type", async (req, res) => {
 router.post("/aichat", async (req, res) => {
   const { userId, chatSession } = req.body;
 
-  if (!userId || !chatSession) {
-    return res.status(400).json({ message: "Missing userId or chatSession" });
-  }
-
   try {
     const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    user.aichat.push({
-      title: chatSession.title,
-      usermsg: chatSession.usermsg,
-      chat: chatSession.chat,
-    });
-
+    user.aichat.push(chatSession);
     await user.save();
 
-    res.status(200).json({ message: "Chat saved successfully" });
-  } catch (error) {
-    console.error("Error saving chat:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(200).json({ message: "Chat saved", chat: chatSession });
+  } catch (err) {
+    console.error("Failed to save AI chat:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 router.get("/aichat/:userId", async (req, res) => {
+  const { userId } = req.params;
+
   try {
-    const user = await User.findById(req.params.userId).select("aichat");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user.aichat);
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Return aichat array
+    res.status(200).json(user.aichat || []);
   } catch (err) {
-    console.error("Error fetching chat history:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Failed to fetch user chat history:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
