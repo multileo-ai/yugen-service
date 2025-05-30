@@ -7,7 +7,6 @@ require("dotenv").config();
 const { router: authRoutes, authenticate } = require("./routes/auth");
 const taskRoutes = require("./routes/tasks");
 const chatRoutes = require("./routes/chat");
-const chatbotRoutes = require("./routes/chatbot");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,8 +32,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 
 app.use("/api/chat", chatRoutes);
-
-app.use("/api/chatbot", chatbotRoutes);
 
 // MongoDB
 mongoose

@@ -193,6 +193,48 @@ router.get("/image/:userId/:type", async (req, res) => {
   }
 });
 
+// Save new AI chat to user's history
+router.post("/aichat", async (req, res) => {
+  const { userId, chatSession } = req.body;
+
+  if (!userId || !chatSession) {
+    return res.status(400).json({ message: "Missing userId or chatSession" });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.aichat.push({
+      title: chatSession.title,
+      usermsg: chatSession.usermsg,
+      chat: chatSession.chat,
+    });
+
+    await user.save();
+
+    res.status(200).json({ message: "Chat saved successfully" });
+  } catch (error) {
+    console.error("Error saving chat:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get AI chat history for a user
+router.get("/aichat/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select("aichat");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user.aichat);
+  } catch (err) {
+    console.error("Error fetching chat history:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = {
   router,
   authenticate,
