@@ -5,7 +5,8 @@ const path = require("path");
 require("dotenv").config();
 
 const { router: authRoutes, authenticate } = require("./routes/auth");
-const userRoutes = require("./routes/auth"); // adjust path if needed
+const { router: userRoutes } = require("./routes/auth"); // Destructure router from auth.js exports
+// adjust path if needed
 
 const taskRoutes = require("./routes/tasks");
 const chatRoutes = require("./routes/chat");
