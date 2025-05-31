@@ -26,6 +26,14 @@ const UserSchema = new mongoose.Schema({
       chat: [String],
     },
   ],
+  code: [
+    {
+      title: String,
+      html: String,
+      css: String,
+      js: String,
+    },
+  ],
 });
 
 module.exports = mongoose.model("User", UserSchema);

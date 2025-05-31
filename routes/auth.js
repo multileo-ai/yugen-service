@@ -227,6 +227,37 @@ router.get("/aichat/:userId", async (req, res) => {
   }
 });
 
+// ===== Code Snippet Management =====
+
+router.post("/code", authenticate, async (req, res) => {
+  const { title, html, css, js } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.code.push({ title, html, css, js });
+    await user.save();
+
+    res.status(200).json({ message: "Code saved successfully" });
+  } catch (err) {
+    console.error("Error saving code:", err);
+    res.status(500).json({ message: "Failed to save code" });
+  }
+});
+
+router.get("/code/:userId", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json(user.code || []);
+  } catch (err) {
+    console.error("Failed to fetch code:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // ===== Community Chat =====
 router.post("/chat", authenticate, async (req, res) => {
   try {
