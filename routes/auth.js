@@ -277,6 +277,41 @@ router.post("/chat", authenticate, async (req, res) => {
 
     await newMsg.save();
 
+    // ✅ Extract mentioned usernames like @username
+    const mentionedUsernames = [...message.matchAll(/@(\w+)/g)].map(
+      (m) => m[1]
+    );
+
+    // ✅ Notify mentioned users if online
+    for (const username of mentionedUsernames) {
+      if (username === user.username) continue; // don't notify self
+
+      const mentionedUser = await User.findOne({ username });
+
+      if (mentionedUser) {
+        // Save notification to DB
+        mentionedUser.notification.push({
+          type: "tagged",
+          message: `@${user.username} tagged you in a message:\n${message}`,
+          createdAt: new Date(),
+          read: false,
+        });
+
+        await mentionedUser.save();
+
+        // Emit real-time notification if user is online
+        const targetSocketId = req.onlineUsers?.get(
+          mentionedUser._id.toString()
+        );
+        if (targetSocketId && req.io) {
+          req.io.to(targetSocketId).emit("new-notification", {
+            type: "tagged",
+            message: `@${user.username} tagged you in a message:\n${message}`,
+          });
+        }
+      }
+    }
+
     res.status(201).json(newMsg);
   } catch (err) {
     console.error("Failed to save chat message:", err);
