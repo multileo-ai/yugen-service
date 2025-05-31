@@ -296,7 +296,7 @@ router.get("/chat", async (req, res) => {
 
 // ===== Follow/Unfollow Logic =====
 
-router.post("/follow/:id", verifyToken, async (req, res) => {
+router.post("/follow/:id", authenticate, async (req, res) => {
   const { id } = req.params; // renamed from targetUserId
   const userId = req?.user?.id;
 
