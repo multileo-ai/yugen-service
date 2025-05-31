@@ -342,6 +342,23 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
         name: currentUser.name,
       });
       targetUser.followers += 1;
+
+      // ✅ Append a new notification
+      // Create notification
+      targetUser.notification.push({
+        type: "follow",
+        message: `@${currentUser.username} followed you.`,
+        createdAt: new Date(),
+        read: false,
+      });
+
+      // Emit real-time notification if online
+      const targetSocketId = req.onlineUsers.get(targetUserId);
+      if (targetSocketId) {
+        req.io.to(targetSocketId).emit("new-notification", {
+          message: `@${currentUser.username} followed you.`,
+        });
+      }
     }
 
     await currentUser.save();
