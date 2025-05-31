@@ -409,9 +409,12 @@ router.post("/follow/:id", authenticate, async (req, res) => {
           type: "follow",
           message: `@${currentUser.username} followed you.`,
           user: {
-            _id: currentUser._id,
+            _id: currentUser._id.toString(),
             name: currentUser.name,
             username: currentUser.username,
+            profileImageUrl: `${
+              process.env.BASE_URL || "https://yugen-service.onrender.com"
+            }/api/auth/image/${currentUser._id}/profileImage`,
           },
         });
       }
