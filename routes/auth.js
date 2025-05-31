@@ -294,6 +294,70 @@ router.get("/chat", async (req, res) => {
   }
 });
 
+// ===== Follow/Unfollow Logic =====
+
+router.post("/follow/:targetUserId", authenticate, async (req, res) => {
+  const { targetUserId } = req.params;
+  const userId = req.user.id;
+
+  if (userId === targetUserId) {
+    return res.status(400).json({ message: "You cannot follow yourself" });
+  }
+
+  try {
+    const currentUser = await User.findById(userId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const alreadyFollowing = currentUser.followingList.some(
+      (entry) => entry.userId.toString() === targetUserId
+    );
+
+    if (alreadyFollowing) {
+      // Unfollow logic
+      currentUser.followingList = currentUser.followingList.filter(
+        (entry) => entry.userId.toString() !== targetUserId
+      );
+      currentUser.following -= 1;
+
+      targetUser.followersList = targetUser.followersList.filter(
+        (entry) => entry.userId.toString() !== userId
+      );
+      targetUser.followers -= 1;
+    } else {
+      // Follow logic
+      currentUser.followingList.push({
+        userId: targetUser._id,
+        username: targetUser.username,
+        name: targetUser.name,
+      });
+      currentUser.following += 1;
+
+      targetUser.followersList.push({
+        userId: currentUser._id,
+        username: currentUser.username,
+        name: currentUser.name,
+      });
+      targetUser.followers += 1;
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.status(200).json({
+      following: !alreadyFollowing,
+      currentUserFollowingCount: currentUser.following,
+      targetUserFollowersCount: targetUser.followers,
+    });
+  } catch (err) {
+    console.error("Follow error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = {
   router,
   authenticate,

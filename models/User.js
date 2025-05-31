@@ -11,6 +11,20 @@ const UserSchema = new mongoose.Schema({
   followers: { type: Number, default: 0 },
   following: { type: Number, default: 0 },
   skills: { type: [String], default: [] },
+  followersList: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      username: String,
+      name: String,
+    },
+  ],
+  followingList: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      username: String,
+      name: String,
+    },
+  ],
   profileImage: {
     data: Buffer,
     contentType: String,
@@ -32,6 +46,14 @@ const UserSchema = new mongoose.Schema({
       html: String,
       css: String,
       js: String,
+    },
+  ],
+  notification: [
+    {
+      type: String, // e.g., 'follow', 'like', 'comment'
+      message: String,
+      createdAt: { type: Date, default: Date.now },
+      read: { type: Boolean, default: false },
     },
   ],
 });
