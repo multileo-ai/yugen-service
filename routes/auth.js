@@ -307,6 +307,11 @@ router.post("/chat", authenticate, async (req, res) => {
           req.io.to(targetSocketId).emit("new-notification", {
             type: "tagged",
             message: `@${user.username} tagged you in a message:\n${message}`,
+            user: {
+              _id: user._id,
+              name: user.name,
+              username: user.username,
+            },
           });
         }
       }
@@ -401,7 +406,13 @@ router.post("/follow/:id", authenticate, async (req, res) => {
       const targetSocketId = req.onlineUsers?.get(id);
       if (targetSocketId && req.io) {
         req.io.to(targetSocketId).emit("new-notification", {
+          type: "follow",
           message: `@${currentUser.username} followed you.`,
+          user: {
+            _id: currentUser._id,
+            name: currentUser.name,
+            username: currentUser.username,
+          },
         });
       }
     }
