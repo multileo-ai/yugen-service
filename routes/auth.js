@@ -298,10 +298,12 @@ router.get("/chat", async (req, res) => {
 
 router.post("/follow/:targetUserId", authenticate, async (req, res) => {
   const { targetUserId } = req.params;
-  const userId = req.user.id;
+  const userId = req?.user?.id;
 
-  if (userId === targetUserId) {
-    return res.status(400).json({ message: "You cannot follow yourself" });
+  if (!userId) {
+    return res
+      .status(401)
+      .json({ message: "Unauthorized. Invalid token or user." });
   }
 
   try {
@@ -309,12 +311,15 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
     const targetUser = await User.findById(targetUserId);
 
     if (!currentUser || !targetUser) {
+      console.error("User not found:", { userId, targetUserId });
       return res.status(404).json({ message: "User not found" });
     }
-
     const alreadyFollowing = currentUser.followingList.some(
       (entry) => entry.userId.toString() === targetUserId
     );
+
+    console.log("Follow request by:", currentUser.username);
+    console.log("Target user:", targetUser.username);
 
     if (alreadyFollowing) {
       // Unfollow logic
