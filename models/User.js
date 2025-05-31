@@ -50,7 +50,7 @@ const UserSchema = new mongoose.Schema({
   ],
   notification: [
     {
-      type: String, // e.g., 'follow', 'like', 'comment'
+      type: { type: String },
       message: String,
       createdAt: { type: Date, default: Date.now },
       read: { type: Boolean, default: false },
