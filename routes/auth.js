@@ -297,7 +297,7 @@ router.get("/chat", async (req, res) => {
 // ===== Follow/Unfollow Logic =====
 
 router.post("/follow/:id", authenticate, async (req, res) => {
-  const { id } = req.params; // renamed from targetUserId
+  const { id } = req.params;
   const userId = req?.user?.id;
 
   if (!userId) {
@@ -308,12 +308,16 @@ router.post("/follow/:id", authenticate, async (req, res) => {
 
   try {
     const currentUser = await User.findById(userId);
-    const targetUser = await User.findById(id); // use `id` here
+    const targetUser = await User.findById(id);
 
     if (!currentUser || !targetUser) {
       console.error("User not found:", { userId, targetUserId: id });
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Defensive: Initialize follower/following counts if undefined
+    currentUser.following = currentUser.following || 0;
+    targetUser.followers = targetUser.followers || 0;
 
     const alreadyFollowing = currentUser.followingList.some(
       (entry) => entry.userId.toString() === id
@@ -321,18 +325,19 @@ router.post("/follow/:id", authenticate, async (req, res) => {
 
     console.log("Follow request by:", currentUser.username);
     console.log("Target user:", targetUser.username);
+    console.log("Already following?", alreadyFollowing);
 
     if (alreadyFollowing) {
       // Unfollow logic
       currentUser.followingList = currentUser.followingList.filter(
         (entry) => entry.userId.toString() !== id
       );
-      currentUser.following -= 1;
+      currentUser.following = Math.max(0, currentUser.following - 1);
 
       targetUser.followersList = targetUser.followersList.filter(
         (entry) => entry.userId.toString() !== userId
       );
-      targetUser.followers -= 1;
+      targetUser.followers = Math.max(0, targetUser.followers - 1);
     } else {
       // Follow logic
       currentUser.followingList.push({
@@ -358,8 +363,8 @@ router.post("/follow/:id", authenticate, async (req, res) => {
       });
 
       // Emit real-time notification if online
-      const targetSocketId = req.onlineUsers.get(id);
-      if (targetSocketId) {
+      const targetSocketId = req.onlineUsers?.get(id);
+      if (targetSocketId && req.io) {
         req.io.to(targetSocketId).emit("new-notification", {
           message: `@${currentUser.username} followed you.`,
         });
@@ -369,14 +374,14 @@ router.post("/follow/:id", authenticate, async (req, res) => {
     await currentUser.save();
     await targetUser.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       following: !alreadyFollowing,
       currentUserFollowingCount: currentUser.following,
       targetUserFollowersCount: targetUser.followers,
     });
   } catch (err) {
     console.error("Follow error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
