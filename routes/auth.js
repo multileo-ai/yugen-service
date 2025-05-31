@@ -296,8 +296,8 @@ router.get("/chat", async (req, res) => {
 
 // ===== Follow/Unfollow Logic =====
 
-router.post("/follow/:targetUserId", authenticate, async (req, res) => {
-  const { targetUserId } = req.params;
+router.post("/follow/:id", verifyToken, async (req, res) => {
+  const { id } = req.params; // renamed from targetUserId
   const userId = req?.user?.id;
 
   if (!userId) {
@@ -308,14 +308,15 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
 
   try {
     const currentUser = await User.findById(userId);
-    const targetUser = await User.findById(targetUserId);
+    const targetUser = await User.findById(id); // use `id` here
 
     if (!currentUser || !targetUser) {
-      console.error("User not found:", { userId, targetUserId });
+      console.error("User not found:", { userId, targetUserId: id });
       return res.status(404).json({ message: "User not found" });
     }
+
     const alreadyFollowing = currentUser.followingList.some(
-      (entry) => entry.userId.toString() === targetUserId
+      (entry) => entry.userId.toString() === id
     );
 
     console.log("Follow request by:", currentUser.username);
@@ -324,7 +325,7 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
     if (alreadyFollowing) {
       // Unfollow logic
       currentUser.followingList = currentUser.followingList.filter(
-        (entry) => entry.userId.toString() !== targetUserId
+        (entry) => entry.userId.toString() !== id
       );
       currentUser.following -= 1;
 
@@ -348,8 +349,7 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
       });
       targetUser.followers += 1;
 
-      // ✅ Append a new notification
-      // Create notification
+      // Append a new notification
       targetUser.notification.push({
         type: "follow",
         message: `@${currentUser.username} followed you.`,
@@ -358,7 +358,7 @@ router.post("/follow/:targetUserId", authenticate, async (req, res) => {
       });
 
       // Emit real-time notification if online
-      const targetSocketId = req.onlineUsers.get(targetUserId);
+      const targetSocketId = req.onlineUsers.get(id);
       if (targetSocketId) {
         req.io.to(targetSocketId).emit("new-notification", {
           message: `@${currentUser.username} followed you.`,
